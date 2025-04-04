@@ -1,40 +1,29 @@
-import os
+
 import tweepy
 import time
+import os
 
-API_KEY = os.getenv("TWITTER_API_KEY")
-API_SECRET = os.getenv("TWITTER_API_SECRET")
-ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
-ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET")
+# مصادقة تويتر باستخدام المفاتيح البيئية
+auth = tweepy.OAuth1UserHandler(
+    os.getenv("TWITTER_API_KEY"),
+    os.getenv("TWITTER_API_SECRET"),
+    os.getenv("TWITTER_ACCESS_TOKEN"),
+    os.getenv("TWITTER_ACCESS_SECRET")
+)
 
-auth = tweepy.OAuth1UserHandler(API_KEY, API_SECRET, ACCESS_TOKEN, ACCESS_SECRET)
 api = tweepy.API(auth)
 
-def load_tweets(file_path):
-    if not os.path.exists(file_path):
-        print(f"❌ File {file_path} not found.")
-        return []
-    with open(file_path, 'r', encoding='utf-8') as f:
-        lines = [line.strip() for line in f if line.strip()]
-    return lines
+# تحميل التغريدات من ملف خارجي
+with open("tweets.txt", "r", encoding="utf-8") as file:
+    tweets = [line.strip() for line in file if line.strip()]
 
-def main():
-    tweet_file = "tweets.txt"
-    tweets = load_tweets(tweet_file)
-    index = 0
-
-    while True:
-        if not tweets:
-            print("⚠️ No tweets loaded. Waiting 15 minutes and retrying.")
-        else:
-            tweet = tweets[index % len(tweets)]
-            try:
-                api.update_status(tweet)
-                print(f"✅ Tweet sent: {tweet}")
-            except Exception as e:
-                print(f"❌ Failed to tweet: {e}")
-            index += 1
-        time.sleep(900)
-
-if __name__ == "__main__":
-    main()
+# بدء التغريد كل 15 دقيقة
+while True:
+    for tweet in tweets:
+        try:
+            api.update_status(tweet)
+            print(f"✅ تم نشر التغريدة: {tweet}")
+            time.sleep(900)  # 15 دقيقة
+        except Exception as e:
+            print(f"❌ خطأ أثناء النشر: {e}")
+            time.sleep(60)  # انتظر دقيقة قبل المحاولة مجددًا
